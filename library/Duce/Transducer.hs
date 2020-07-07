@@ -358,3 +358,40 @@ sort cacheSize getKey =
           awaitingOne newMap
         Nothing ->
           id
+
+{-|
+A safer variation of 'sort',
+which ensures that the output is sorted by discarding the values,
+which arrive after the window's active minimal value becomes larger.
+This is affected by the size of the window, which you specify as the parameter.
+-}
+sortDiscarding :: Ord k => Int -> (a -> k) -> Transducer a a
+sortDiscarding cacheSize getKey =
+  fillingCache cacheSize Multimap.empty
+  where
+    fillingCache missing map =
+      if missing > 0
+        then
+          AwaitingTransducer $ \ a ->
+            fillingCache (pred missing) (Multimap.insert (getKey a) a map)
+        else
+          filled map
+    filled map =
+      case Multimap.minViewWithKey map of
+        Just ((k, a), newMap) ->
+          EmittingTransducer a $
+          awaitingOne k newMap
+        Nothing ->
+          id
+    awaitingOne minimum map =
+      AwaitingTransducer $ \ a ->
+        let
+          key = getKey a
+          in if key > minimum
+            then filled (Multimap.insert key a map)
+            else if key == minimum
+              then
+                EmittingTransducer a $
+                awaitingOne minimum map
+              else
+                awaitingOne minimum map
