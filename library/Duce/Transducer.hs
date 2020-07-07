@@ -16,6 +16,8 @@ import Duce.Defs
 import qualified StrictList
 import qualified Data.Text as Text
 import qualified Deque.Strict as Deque
+import qualified Data.Map.Strict as Map
+import qualified Duce.Util.Multimap as Multimap
 
 
 {-|
@@ -268,3 +270,26 @@ quantizeWithMealy startTime quantization getTime initialMealy =
             else
               EmittingTransducer (Just $! b) $
               startingWindow (endTime + quantization) time (runMealy initialMealy a)
+
+sort :: Ord k => Int -> (a -> k) -> Transducer a a
+sort cacheSize getKey =
+  fillingCache cacheSize Multimap.empty
+  where
+    fillingCache missing =
+      if missing > 0
+        then
+          awaiting (fillingCache (pred missing))
+        else
+          filled
+    awaiting cont map =
+      AwaitingTransducer $ \ a ->
+        cont (Multimap.insert (getKey a) a map)
+    awaitingOne =
+      awaiting filled
+    filled map =
+      case Multimap.minView map of
+        Just (a, newMap) ->
+          EmittingTransducer a $
+          awaitingOne newMap
+        Nothing ->
+          id

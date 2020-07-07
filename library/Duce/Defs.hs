@@ -95,3 +95,13 @@ deriving instance Functor (Transducer i)
 
 instance Alt (Transducer i) where
   (<!>) = (<>)
+
+instance Category Transducer where
+  id = AwaitingTransducer (\ i -> EmittingTransducer i id)
+  (.) = \ case
+    AwaitingTransducer bcAwaiter -> let
+      eliminateAb = \ case
+        AwaitingTransducer abAwaiter -> AwaitingTransducer (\ a -> eliminateAb (abAwaiter a))
+        EmittingTransducer b abNext -> bcAwaiter b . abNext
+      in eliminateAb
+    EmittingTransducer c bcNext -> \ ab -> EmittingTransducer c (bcNext . ab)
