@@ -271,6 +271,71 @@ quantizeWithMealy startTime quantization getTime initialMealy =
               EmittingTransducer (Just $! b) $
               startingWindow (endTime + quantization) time (runMealy initialMealy a)
 
+{-|
+Quantizer of time-series.
+-}
+quantizeWithMoore ::
+  {-|
+  The starting timestamp of the series.
+  All samples prior to it will be discarded.
+  And if the actual stream starts from a later point in time
+  then the output stream will begin with 'Nothing'-values,
+  standing for the missing ones.
+
+  A typical value to provide here is the timestamp of the first value of the input stream.
+  -}
+  Int ->
+  {-|
+  Quantization. Defines the time-window from which the quantized sample will be aggregated.
+  -}
+  Int ->
+  {-|
+  How to get the time from the input sample.
+  -}
+  (a -> Int) ->
+  {-|
+  Moore machine, which specifies how to reduce the values of a quantized period,
+  into a single value.
+  
+  Only the latest output of the machine will be used and forced.
+  -}
+  Moore a b ->
+  {-|
+  Quantizing transducer.
+  -}
+  Transducer a b
+quantizeWithMoore startTime quantization getTime (Moore defaultB initialFeedA) =
+  skippingBeforeStartTime
+  where
+    skippingBeforeStartTime =
+      AwaitingTransducer $ \ a ->
+        let
+          time = getTime a
+          in if time < startTime
+            then skippingBeforeStartTime
+            else startingWindow (startTime + quantization) time (initialFeedA a)
+    startingWindow endTime time state =
+      if time < endTime
+        then
+          aggregatingWindow endTime state
+        else
+          let
+            count = div (time - endTime) quantization
+            newEndTime = endTime + count * quantization
+            in
+              foldr id (aggregatingWindow newEndTime state) $
+              replicate count (EmittingTransducer defaultB)
+    aggregatingWindow endTime (Moore b feedA) =
+      AwaitingTransducer $ \ a ->
+        let
+          time = getTime a
+          in if time < endTime
+            then
+              aggregatingWindow endTime (feedA a)
+            else
+              EmittingTransducer b $
+              startingWindow (endTime + quantization) time (initialFeedA a)
+
 sort :: Ord k => Int -> (a -> k) -> Transducer a a
 sort cacheSize getKey =
   fillingCache cacheSize Multimap.empty
