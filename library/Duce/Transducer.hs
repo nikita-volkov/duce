@@ -2,7 +2,9 @@ module Duce.Transducer
 (
   Transducer(..),
   emitElements,
+  each,
   each3,
+  reduce,
   window,
   reduceEach,
   reduceWithOffset,
@@ -11,7 +13,7 @@ module Duce.Transducer
 )
 where
 
-import Duce.Prelude hiding (par, seq, foldl, sum, product, take, drop, concat, takeWhile, dropWhile, either, null, head, find)
+import Duce.Prelude hiding (map, par, seq, foldl, sum, product, take, drop, concat, takeWhile, dropWhile, either, null, head, find)
 import Duce.Defs
 import qualified StrictList
 import qualified Data.Text as Text
@@ -27,6 +29,10 @@ emitElements :: Foldable f => Transducer (f o) o
 emitElements =
   AwaitingTransducer $
   foldr EmittingTransducer emitElements
+
+each :: (i -> o) -> Transducer i o
+each f =
+  AwaitingTransducer (\ i -> EmittingTransducer (f i) (each f))
 
 {-| Window on each 3 consecutive elements. -}
 {-# INLINE each3 #-}
@@ -44,6 +50,44 @@ each3 cont =
       EmittingTransducer
         (cont i1 i2 i3)
         (AwaitingTransducer (three i2 i3))
+
+reduce :: Reducer a b -> Transducer a b
+reduce initialReducer =
+  eliminateReducer initialReducer
+  where
+    eliminateReducer =
+      \ case
+        AwaitingReducer nextReducerByInput ->
+          AwaitingTransducer (eliminateReducer . nextReducerByInput)
+        TerminatedReducer output ->
+          EmittingTransducer output (eliminateReducer initialReducer)
+
+batch :: Int -> Moore i o -> Transducer i o
+batch amount moore =
+  counting amount moore
+  where
+    counting amountLeft (Moore o nextMooreByInput) =
+      if amountLeft > 0
+        then
+          AwaitingTransducer $ \ i ->
+            counting (pred amountLeft) (nextMooreByInput i)
+        else
+          EmittingTransducer o (counting amount moore)
+
+take :: Int -> Transducer i i
+take =
+  counting
+  where
+    counting amountLeft =
+      if amountLeft > 0
+        then
+          AwaitingTransducer $ \ i ->
+            EmittingTransducer i $
+            counting (pred amountLeft)
+        else
+          finished
+    finished =
+      AwaitingTransducer (const finished)
 
 window :: Int {-^ Window size -} -> (Deque i -> o) -> Transducer i o
 window windowSize proj =
@@ -75,10 +119,7 @@ reduceEach :: Reducer a b -> Transducer a b
 reduceEach initialReducer =
   case initialReducer of
     TerminatedReducer o ->
-      EmittingTransducer o ignoring
-      where
-        ignoring =
-          AwaitingTransducer $ const ignoring
+      each (const o)
     AwaitingReducer initialAwaiter ->
       awaiting []
       where
