@@ -132,3 +132,7 @@ import Data.Machine.Moore as Exports
 -- deque
 -------------------------
 import Deque.Strict as Exports (Deque(..))
+
+-- foldl
+-------------------------
+import Control.Foldl as Exports (Fold(..))
