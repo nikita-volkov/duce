@@ -5,11 +5,14 @@ module Duce.Transducer
   each,
   each3,
   reduce,
+  batch,
+  take,
   window,
   reduceEach,
   reduceWithOffset,
   quantize,
   quantizeWithMealy,
+  quantizeWithMoore,
 )
 where
 
