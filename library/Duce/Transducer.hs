@@ -4,6 +4,7 @@ module Duce.Transducer
   emitElements,
   each,
   each3,
+  scan,
   reduce,
   batch,
   take,
@@ -54,6 +55,11 @@ each3 cont =
       EmittingTransducer
         (cont i1 i2 i3)
         (AwaitingTransducer (three i2 i3))
+
+scan :: (b -> a -> b) -> b -> Transducer a b
+scan step =
+  fix $ \ loop !b ->
+    EmittingTransducer b (AwaitingTransducer (\ a -> loop (step b a)))
 
 reduce :: Reducer a b -> Transducer a b
 reduce initialReducer =
