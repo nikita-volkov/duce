@@ -13,6 +13,7 @@ module Duce.Transducer
   quantize,
   quantizeWithMealy,
   quantizeWithMoore,
+  timestamp,
 )
 where
 
@@ -379,6 +380,15 @@ quantizeWithMoore startTime quantization getTime (Moore defaultB initialFeedA) =
             else
               EmittingTransducer b $
               startingWindow (endTime + quantization) time (initialFeedA a)
+
+timestamp :: Int -> Int -> (Int -> a -> b) -> Transducer a b
+timestamp startTime interval pack =
+  mapping startTime
+  where
+    mapping time =
+      AwaitingTransducer $ \ a ->
+        EmittingTransducer (pack time a) $
+        mapping (time + interval)
 
 sort :: Ord k => Int -> (a -> k) -> Transducer a a
 sort cacheSize getKey =
