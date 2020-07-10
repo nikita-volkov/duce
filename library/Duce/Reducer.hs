@@ -31,7 +31,7 @@ import qualified Text.Builder as TextBuilder
 sequentially :: SeqReducer i o -> Reducer i o
 sequentially = coerce
 
-transduce :: Transducer b a -> Reducer a o -> Reducer b o
+transduce :: Transducer a b -> Reducer b o -> Reducer a o
 transduce =
   eliminateReducer
   where
@@ -43,7 +43,7 @@ transduce =
           TerminatedReducer o
     eliminateTransducer reducerAwaiter =
       \ case
-        EmittingTransducer a nextTx ->
-          eliminateReducer nextTx (reducerAwaiter a)
+        EmittingTransducer b nextTx ->
+          eliminateReducer nextTx (reducerAwaiter b)
         AwaitingTransducer transducerAwaiter ->
           AwaitingReducer $ eliminateTransducer reducerAwaiter . transducerAwaiter
