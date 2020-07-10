@@ -75,14 +75,14 @@ instance Semigroup (Transducer i o) where
   (<>) =
     build StrictList.Nil
     where
-      build oList =
+      build !oList =
         \ case
           EmittingTransducer oL nextL ->
             build (StrictList.Cons oL oList) nextL
           AwaitingTransducer awaitL ->
             eliminateR oList
             where
-              eliminateR oList =
+              eliminateR !oList =
                 \ case
                   EmittingTransducer oR nextR ->
                     eliminateR (StrictList.Cons oR oList) nextR
