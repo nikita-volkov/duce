@@ -91,6 +91,12 @@ instance Semigroup (Transducer i o) where
                       (AwaitingTransducer (\ i -> awaitL i <> awaitR i))
                       oList
 
+instance Monoid (Transducer i o) where
+  mempty =
+    AwaitingTransducer (const mempty)
+  mappend =
+    (<>)
+
 deriving instance Functor (Transducer i)
 
 instance Alt (Transducer i) where
