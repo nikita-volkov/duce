@@ -3,6 +3,7 @@ module Duce.Reducer
   Reducer(..),
   SeqReducer(..),
   sequentially,
+  transduce,
 )
 where
 
@@ -29,3 +30,20 @@ import qualified Text.Builder as TextBuilder
 
 sequentially :: SeqReducer i o -> Reducer i o
 sequentially = coerce
+
+transduce :: Transducer b a -> Reducer a o -> Reducer b o
+transduce =
+  eliminateReducer
+  where
+    eliminateReducer tx =
+      \ case
+        AwaitingReducer reducerAwaiter ->
+          eliminateTransducer reducerAwaiter tx
+        TerminatedReducer o ->
+          TerminatedReducer o
+    eliminateTransducer reducerAwaiter =
+      \ case
+        EmittingTransducer a nextTx ->
+          eliminateReducer nextTx (reducerAwaiter a)
+        AwaitingTransducer transducerAwaiter ->
+          AwaitingReducer $ eliminateTransducer reducerAwaiter . transducerAwaiter
