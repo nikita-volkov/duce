@@ -1,8 +1,6 @@
 module Duce.Reducer
 (
   Reducer(..),
-  SeqReducer(..),
-  sequentially,
   transduce,
 )
 where
@@ -27,9 +25,6 @@ import qualified Data.HashMap.Strict as HashMap
 import qualified StrictList
 import qualified Text.Builder as TextBuilder
 
-
-sequentially :: SeqReducer i o -> Reducer i o
-sequentially = coerce
 
 transduce :: Transducer a b -> Reducer b o -> Reducer a o
 transduce =

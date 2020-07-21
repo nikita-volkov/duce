@@ -25,7 +25,7 @@ import qualified Text.Builder as TextBuilder
 -------------------------
 
 {-|
-General reducer.
+Active reducer.
 -}
 data Reducer i o =
   AwaitingReducer (i -> Reducer i o) |
@@ -33,30 +33,23 @@ data Reducer i o =
 
 deriving instance Functor (Reducer i)
 
-{-|
-Reducer wrapper, which provides instances for sequential composition.
-
-Particularly this provides a monad instance,
-which first feeds the left reducer until it terminates with an output value,
-which is then used to get the next reducer,
-which will be fed the following inputs.
--}
-newtype SeqReducer i o = SeqReducer (Reducer i o)
-
-deriving instance Functor (SeqReducer i)
-
-instance Applicative (SeqReducer i) where
+instance Applicative (Reducer i) where
   pure = return
   (<*>) = ap
 
-instance Monad (SeqReducer i) where
+{-|
+First feeds the left reducer until it terminates with an output value,
+which is then used to get the next reducer,
+which it then feeds the following inputs.
+-}
+instance Monad (Reducer i) where
   return =
-    SeqReducer . TerminatedReducer
+    TerminatedReducer
   (>>=) =
     \ case
-      SeqReducer (AwaitingReducer await) ->
-        \ k -> SeqReducer $ AwaitingReducer $ \ i -> coerce (SeqReducer (await i) >>= k)
-      SeqReducer (TerminatedReducer a) ->
+      AwaitingReducer await ->
+        \ k -> AwaitingReducer $ \ i -> await i >>= k
+      TerminatedReducer a ->
         ($ a)
 
 
