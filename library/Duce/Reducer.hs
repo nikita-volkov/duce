@@ -2,6 +2,7 @@ module Duce.Reducer
 (
   Reducer(..),
   transduce,
+  head,
 )
 where
 
@@ -42,3 +43,10 @@ transduce =
           eliminateReducer nextTx (reducerAwaiter b)
         AwaitingTransducer transducerAwaiter ->
           AwaitingReducer $ eliminateTransducer reducerAwaiter . transducerAwaiter
+
+{-|
+Await for the first value and terminate with it.
+-}
+head :: Reducer a a
+head =
+  AwaitingReducer TerminatedReducer

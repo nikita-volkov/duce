@@ -61,6 +61,27 @@ scan step =
   fix $ \ loop !b ->
     EmittingTransducer b (AwaitingTransducer (\ a -> loop (step b a)))
 
+{-|
+Construct transducer from reducer.
+
+Allows to apply reducer\'s monadic API,
+where 'Duce.Reducer.head' can be used for awaiting for next input
+and 'return' - for yielding.
+
+E.g., 'each2' can be defined thus:
+
+>each2 :: (i -> i -> o) -> Transducer i o
+>each2 cont =
+>  reduce $ do
+>    a <- Reducer.head
+>    b <- Reducer.head
+>    return (cont a b)
+
+Please notice though that this is less powerful
+than direct declaration of transducer,
+since it reinitializes the reducer after each termination,
+thus not allowing you to thread state.
+-}
 reduce :: Reducer a b -> Transducer a b
 reduce initialReducer =
   eliminateReducer initialReducer
