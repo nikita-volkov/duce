@@ -18,7 +18,6 @@ import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Unsafe as ByteString
 import qualified Data.HashMap.Strict as HashMap
 import qualified StrictList
-import qualified Text.Builder as TextBuilder
 
 
 -- *
