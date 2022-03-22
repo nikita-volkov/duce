@@ -2,6 +2,9 @@ module Duce.Reducer
   ( Reducer (..),
     transduce,
     head,
+
+    -- *
+    reduceXzFile,
   )
 where
 
