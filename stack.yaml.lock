@@ -3,7 +3,18 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    name: lzma-conduit
+    version: 1.2.2
+    git: https://github.com/nikita-volkov/lzma-conduit
+    pantry-tree:
+      size: 397
+      sha256: 163fec235bc247a6a1804490672e7f375e18bbf4b64a5a607a0d64fceb48ba48
+    commit: 3fbc7471441772c6907ceb7365fa8b5afcd72cbe
+  original:
+    git: https://github.com/nikita-volkov/lzma-conduit
+    commit: 3fbc7471441772c6907ceb7365fa8b5afcd72cbe
 snapshots:
 - completed:
     size: 511392

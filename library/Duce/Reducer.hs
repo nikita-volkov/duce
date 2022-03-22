@@ -5,12 +5,14 @@ module Duce.Reducer
   )
 where
 
+import qualified Conduit
 import qualified Control.Comonad as Comonad
 import qualified Data.Attoparsec.ByteString as AttoByteString
 import qualified Data.Attoparsec.Text as AttoText
 import qualified Data.Attoparsec.Types as Atto
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Unsafe as ByteString
+import qualified Data.Conduit.Lzma as LzmaConduit
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
@@ -57,3 +59,21 @@ reducifyMoore :: Moore a b -> Reducer b c -> Reducer a c
 reducifyMoore (Moore b nextMoore) = \case
   AwaitingReducer nextReducer -> AwaitingReducer $ \a -> reducifyMoore (nextMoore a) (nextReducer b)
   TerminatedReducer c -> TerminatedReducer c
+
+-- *
+
+reduceXzFile :: FilePath -> Reducer ByteString o -> IO (Maybe o)
+reduceXzFile path reducer =
+  Conduit.withSourceFile path $ \source ->
+    Conduit.runConduit $ source Conduit..| toConduitSink reducer
+
+-- *
+
+toConduitSink :: Reducer i o -> Conduit.ConduitT i Void IO (Maybe o)
+toConduitSink = \case
+  AwaitingReducer awaiter ->
+    Conduit.await >>= \case
+      Just i -> toConduitSink (awaiter i)
+      Nothing -> pure Nothing
+  TerminatedReducer res ->
+    pure (Just res)
