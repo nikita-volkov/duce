@@ -114,3 +114,17 @@ instance Category Transducer where
             EmittingTransducer b abNext -> bcAwaiter b . abNext
        in eliminateAb
     EmittingTransducer c bcNext -> \ab -> EmittingTransducer c (bcNext . ab)
+
+instance Arrow Transducer
+
+instance ArrowChoice Transducer where
+  (|||) = \case
+    AwaitingTransducer lAwaiter ->
+      let eliminateR = \case
+            AwaitingTransducer rAwaiter ->
+              AwaitingTransducer $ \case
+                Left li -> lAwaiter li ||| AwaitingTransducer rAwaiter
+                Right ri -> eliminateR (rAwaiter ri)
+            EmittingTransducer o nextR -> EmittingTransducer o (eliminateR nextR)
+       in eliminateR
+    EmittingTransducer o nextL -> \r -> EmittingTransducer o (nextL ||| r)
