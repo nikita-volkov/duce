@@ -45,6 +45,22 @@ instance Monad (Reducer i) where
       TerminatedReducer a ->
         ($ a)
 
+instance Profunctor Reducer where
+  dimap map1 map2 = \case
+    AwaitingReducer awaiter ->
+      AwaitingReducer $ \i -> dimap map1 map2 $ awaiter $ map1 i
+    TerminatedReducer res ->
+      TerminatedReducer $ map2 res
+
+instance Choice Reducer where
+  right' = \case
+    AwaitingReducer awaiter ->
+      AwaitingReducer $ \case
+        Right i -> right' $ awaiter i
+        Left err -> TerminatedReducer $ Left err
+    TerminatedReducer res ->
+      TerminatedReducer $ Right res
+
 -- *
 
 data Transducer i o
