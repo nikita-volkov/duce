@@ -33,7 +33,7 @@ data Reducer i o =
 deriving instance Functor (Reducer i)
 
 instance Applicative (Reducer i) where
-  pure = return
+  pure = TerminatedReducer
   (<*>) = ap
 
 {-|
@@ -42,8 +42,7 @@ which is then used to get the next reducer,
 which it then feeds the following inputs.
 -}
 instance Monad (Reducer i) where
-  return =
-    TerminatedReducer
+  return = pure
   (>>=) =
     \ case
       AwaitingReducer await ->
