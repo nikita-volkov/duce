@@ -14,6 +14,10 @@ module Duce.Transducer
     quantizeWithMealy,
     quantizeWithMoore,
     timestamp,
+    transducifyMealy,
+    transducifyMoore,
+    discretise,
+    decodeUsingCereal,
   )
 where
 
