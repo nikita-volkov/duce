@@ -427,3 +427,65 @@ sortDiscarding cacheSize getKey =
                     EmittingTransducer a $
                       awaitingOne minimum map
                   else awaitingOne minimum map
+
+-- |
+-- Collect all outputs as reverse-list until an input is requested.
+eliminateUntilAwaiting :: Transducer i o -> ([o], i -> Transducer i o)
+eliminateUntilAwaiting = build []
+  where
+    build oList = \case
+      AwaitingTransducer awaiter -> (oList, awaiter)
+      EmittingTransducer o next -> build (o : oList) next
+
+consumeOne :: i -> Transducer i o -> Transducer i o
+consumeOne i = \case
+  AwaitingTransducer awaiter -> awaiter i
+  EmittingTransducer o next -> EmittingTransducer o (consumeOne i next)
+
+consumeList :: [i] -> Transducer i o -> Transducer i o
+consumeList inputs = \case
+  AwaitingTransducer awaiter -> case inputs of
+    i : iTail -> consumeList iTail (awaiter i)
+    _ -> AwaitingTransducer awaiter
+  EmittingTransducer o next -> EmittingTransducer o (consumeList inputs next)
+
+emitFoldable :: Foldable f => f o -> Transducer i o -> Transducer i o
+emitFoldable = flip (foldr EmittingTransducer)
+
+-- |
+-- Generalise a Mealy machine as a Transducer.
+--
+-- Mealy machine essentially is a stateful mapper.
+-- It produces exactly one output per input,
+-- so the stream does not change density.
+transducifyMealy :: Mealy a b -> Transducer a b
+transducifyMealy (Mealy runMealy) =
+  let await a = case runMealy a of
+        (b, next) -> EmittingTransducer b $ transducifyMealy next
+   in AwaitingTransducer await
+
+-- |
+-- Generalise a Moore machine as a Transducer.
+transducifyMoore :: Moore a b -> Transducer a b
+transducifyMoore (Moore b next) =
+  EmittingTransducer b $ AwaitingTransducer $ transducifyMoore . next
+
+discretise :: Int -> (a -> Int) -> (a -> b) -> Transducer a b
+discretise distance toPosition toOutput =
+  AwaitingTransducer $
+    discretiseStartingWith distance toPosition toOutput
+
+discretiseStartingWith :: Int -> (a -> Int) -> (a -> b) -> a -> Transducer a b
+discretiseStartingWith distance toPosition toOutput =
+  await <$> (+ distance) . toPosition <*> toOutput
+  where
+    await endPosition lastOutput =
+      AwaitingTransducer $ \input ->
+        decide endPosition lastOutput (toPosition input) (toOutput input)
+    decide endPosition lastOutput position output =
+      if position < endPosition
+        then await endPosition output
+        else emit endPosition lastOutput position output
+    emit endPosition lastOutput position output =
+      EmittingTransducer lastOutput $
+        decide (endPosition + distance) lastOutput position output

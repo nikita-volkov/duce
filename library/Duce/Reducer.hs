@@ -46,3 +46,14 @@ transduce =
 head :: Reducer a a
 head =
   AwaitingReducer TerminatedReducer
+
+reduceMealy :: Mealy a b -> Reducer b c -> Reducer a c
+reduceMealy (Mealy runMealy) = \case
+  AwaitingReducer nextReducer -> AwaitingReducer $ \a -> case runMealy a of
+    (b, nextMealy) -> reduceMealy nextMealy (nextReducer b)
+  TerminatedReducer c -> TerminatedReducer c
+
+reduceMoore :: Moore a b -> Reducer b c -> Reducer a c
+reduceMoore (Moore b nextMoore) = \case
+  AwaitingReducer nextReducer -> AwaitingReducer $ \a -> reduceMoore (nextMoore a) (nextReducer b)
+  TerminatedReducer c -> TerminatedReducer c
