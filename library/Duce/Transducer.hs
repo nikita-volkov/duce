@@ -18,6 +18,7 @@ module Duce.Transducer
 where
 
 import qualified Data.Map.Strict as Map
+import qualified Data.Serialize.Get as CerealGet
 import qualified Data.Text as Text
 import qualified Deque.Strict as Deque
 import Duce.Defs
@@ -489,3 +490,21 @@ discretiseStartingWith distance toPosition toOutput =
     emit endPosition lastOutput position output =
       EmittingTransducer lastOutput $
         decide (endPosition + distance) lastOutput position output
+
+decodeUsingCereal :: CerealGet.Get a -> Transducer ByteString (Either Text a)
+decodeUsingCereal dec =
+  await (CerealGet.runGetPartial dec)
+  where
+    await cont =
+      AwaitingTransducer (fromResult . cont)
+    fromResult = \case
+      CerealGet.Done res rem ->
+        EmittingTransducer
+          (Right res)
+          (fromResult (CerealGet.runGetPartial dec rem))
+      CerealGet.Partial cont ->
+        await cont
+      CerealGet.Fail err rem ->
+        EmittingTransducer
+          (Left (fromString err))
+          (fromResult (CerealGet.runGetPartial dec rem))
