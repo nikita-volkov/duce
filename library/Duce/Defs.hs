@@ -84,6 +84,24 @@ instance Monoid (Transducer i o) where
 
 deriving instance Functor (Transducer i)
 
+-- |
+-- Drops out of sync emissions.
+instance Applicative (Transducer a) where
+  pure a = EmittingTransducer a $ pure a
+  l <*> r = case l of
+    EmittingTransducer lRes lNext -> case r of
+      EmittingTransducer rRes rNext ->
+        EmittingTransducer (lRes rRes) (lNext <*> rNext)
+      AwaitingTransducer rAwait ->
+        AwaitingTransducer $ \a -> dropEmissions lNext a <*> rAwait a
+    AwaitingTransducer lAwait ->
+      AwaitingTransducer $ \a -> lAwait a <*> dropEmissions r a
+    where
+      dropEmissions :: Transducer a b -> a -> Transducer a b
+      dropEmissions = \case
+        AwaitingTransducer await -> await
+        EmittingTransducer _ next -> dropEmissions next
+
 instance Alt (Transducer i) where
   (<!>) = (<>)
 
