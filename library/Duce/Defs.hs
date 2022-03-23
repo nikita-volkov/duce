@@ -11,11 +11,9 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.Encoding.Error as Text
 import qualified Data.Text.Unsafe as Text
-import qualified Data.Vector.Generic as Vec
 import Duce.Prelude hiding (concat, drop, dropWhile, either, find, foldl, head, null, par, product, seq, sum, take, takeWhile)
 import qualified Duce.Prelude as Prelude
 import qualified Duce.Text as Text
-import qualified Duce.Vector as Vector
 import qualified StrictList
 
 -- *
