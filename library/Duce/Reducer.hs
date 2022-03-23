@@ -47,11 +47,7 @@ transduce =
         AwaitingTransducer transducerAwaiter ->
           AwaitingReducer $ eliminateTransducer reducerAwaiter . transducerAwaiter
 
--- |
--- Await for the first value and terminate with it.
-head :: Reducer a a
-head =
-  AwaitingReducer TerminatedReducer
+-- *
 
 reducifyMealy :: Mealy a b -> Reducer b c -> Reducer a c
 reducifyMealy (Mealy runMealy) = \case
@@ -63,6 +59,14 @@ reducifyMoore :: Moore a b -> Reducer b c -> Reducer a c
 reducifyMoore (Moore b nextMoore) = \case
   AwaitingReducer nextReducer -> AwaitingReducer $ \a -> reducifyMoore (nextMoore a) (nextReducer b)
   TerminatedReducer c -> TerminatedReducer c
+
+-- *
+
+-- |
+-- Await for the first value and terminate with it.
+head :: Reducer a a
+head =
+  AwaitingReducer TerminatedReducer
 
 -- *
 
