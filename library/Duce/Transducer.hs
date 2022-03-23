@@ -25,7 +25,8 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Serialize.Get as CerealGet
 import qualified Data.Text as Text
 import qualified Deque.Strict as Deque
-import Duce.Defs
+import Duce.Core.Reducer
+import Duce.Core.Transducer
 import Duce.Prelude hiding (concat, drop, dropWhile, either, find, foldl, head, map, null, par, product, seq, sum, take, takeWhile)
 import qualified Duce.Util.Multimap as Multimap
 import qualified StrictList

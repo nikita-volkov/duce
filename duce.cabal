@@ -24,7 +24,8 @@ library
     Duce.Reducer
     Duce.Transducer
   other-modules:
-    Duce.Defs
+    Duce.Core.Reducer
+    Duce.Core.Transducer
     Duce.Prelude
     Duce.Text
     Duce.Util.Multimap
