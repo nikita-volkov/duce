@@ -15,6 +15,13 @@ packages:
   original:
     git: https://github.com/nikita-volkov/lzma-conduit
     commit: 3fbc7471441772c6907ceb7365fa8b5afcd72cbe
+- completed:
+    hackage: vector-extras-0.2.6@sha256:695f171936613b45b37de497ab26cba772616e43b09d9c39f0008d168c1f7064,1883
+    pantry-tree:
+      size: 738
+      sha256: 5a6485bf613ec35a3e13674563ddd00920dfb1040ad16af625793bdf665324a3
+  original:
+    hackage: vector-extras-0.2.6
 snapshots:
 - completed:
     size: 511392

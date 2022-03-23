@@ -2,3 +2,4 @@ resolver: nightly-2022-03-22
 extra-deps:
   - git: https://github.com/nikita-volkov/lzma-conduit
     commit: 3fbc7471441772c6907ceb7365fa8b5afcd72cbe
+  - vector-extras-0.2.6
