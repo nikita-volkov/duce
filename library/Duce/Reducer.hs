@@ -4,7 +4,8 @@ module Duce.Reducer
     head,
 
     -- *
-    reduceXzFile,
+    reduceFile,
+    reduceLzmaFile,
   )
 where
 
@@ -65,10 +66,15 @@ reducifyMoore (Moore b nextMoore) = \case
 
 -- *
 
-reduceXzFile :: FilePath -> Reducer ByteString o -> IO (Maybe o)
-reduceXzFile path reducer =
+reduceFile :: FilePath -> Reducer ByteString o -> IO (Maybe o)
+reduceFile path reducer =
   Conduit.withSourceFile path $ \source ->
     Conduit.runConduit $ source Conduit..| toConduitSink reducer
+
+reduceLzmaFile :: FilePath -> Reducer ByteString o -> IO (Maybe o)
+reduceLzmaFile path reducer =
+  Conduit.withSourceFile path $ \source ->
+    Conduit.runConduit $ source Conduit..| LzmaConduit.decompress Nothing Conduit..| toConduitSink reducer
 
 -- *
 
