@@ -22,13 +22,14 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.Encoding.Error as Text
 import qualified Data.Text.Unsafe as Text
-import qualified Data.Vector.Generic as Vec
+import qualified Data.Vector.Generic as GenericVector
 import Duce.Defs
 import Duce.Prelude hiding (concat, drop, dropWhile, either, find, foldl, head, null, par, product, seq, sum, take, takeWhile)
 import qualified Duce.Prelude as Prelude
 import qualified Duce.Text as Text
 import qualified Duce.Vector as Vector
 import qualified StrictList
+import qualified VectorExtras.Accumulator as VectorAccumulator
 
 transduce :: Transducer a b -> Reducer b o -> Reducer a o
 transduce =
@@ -67,6 +68,13 @@ reducifyMoore (Moore b nextMoore) = \case
 head :: Reducer a a
 head =
   AwaitingReducer TerminatedReducer
+
+vector :: GenericVector.Vector v a => Reducer a (v a)
+vector =
+  go VectorAccumulator.init
+  where
+    go !acc =
+      error "TODO"
 
 -- *
 
