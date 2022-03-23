@@ -24,12 +24,12 @@ library
     Duce.Reducer
     Duce.Transducer
   other-modules:
-    Duce.Prelude
     Duce.Defs
+    Duce.Prelude
     Duce.Text
+    Duce.Util.Multimap
     Duce.Vector
     Duce.Vector.Mutable
-    Duce.Util.Multimap
   build-depends:
     attoparsec >=0.13 && <0.15,
     base >=4.9 && <5,
