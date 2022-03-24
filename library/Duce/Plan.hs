@@ -48,3 +48,7 @@ await =
 yield :: o -> Plan i o ()
 yield output =
   YieldPlan output $ TerminatePlan ()
+
+compose :: (r1 -> r2 -> r) -> Plan i intermediate r1 -> Plan intermediate o r2 -> Plan i o r
+compose =
+  error "TODO"
