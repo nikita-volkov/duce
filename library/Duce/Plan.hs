@@ -1,5 +1,6 @@
 module Duce.Plan where
 
+import qualified Conduit
 import Duce.Prelude
 
 -- *
@@ -68,3 +69,14 @@ mapOutput f = \case
   YieldPlan o plan -> YieldPlan (f o) $ mapOutput f plan
   AwaitPlan await -> AwaitPlan $ mapOutput f . await
   TerminatePlan r -> TerminatePlan r
+
+-- *
+
+toConduit :: Monad m => Plan i o r -> Conduit.ConduitT i o m (Maybe r)
+toConduit = \case
+  YieldPlan o plan -> Conduit.yield o *> toConduit plan
+  AwaitPlan await ->
+    Conduit.await >>= \case
+      Just i -> toConduit $ await i
+      Nothing -> pure Nothing
+  TerminatePlan r -> pure $ Just r
