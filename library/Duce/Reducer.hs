@@ -1,5 +1,10 @@
 module Duce.Reducer
   ( Reducer (..),
+
+    -- *
+    plan,
+
+    -- *
     transduce,
     head,
 
@@ -25,6 +30,7 @@ import qualified Data.Text.Unsafe as Text
 import qualified Data.Vector.Generic as GenericVector
 import Duce.Core.Reducer
 import Duce.Core.Transducer
+import qualified Duce.Plan as Plan
 import Duce.Prelude hiding (concat, drop, dropWhile, either, find, foldl, head, null, par, product, seq, sum, take, takeWhile)
 import qualified Duce.Prelude as Prelude
 import qualified Duce.Text as Text
@@ -98,3 +104,16 @@ toConduitSink = \case
       Nothing -> pure Nothing
   TerminatedReducer res ->
     pure (Just res)
+
+-- *
+
+-- |
+-- Compile a plan.
+--
+-- Provides for monadic construction of reducers.
+plan :: Plan.Plan i Void r -> Reducer i r
+plan = \case
+  Plan.TerminatePlan r ->
+    TerminatedReducer r
+  Plan.AwaitPlan await ->
+    AwaitingReducer $ plan . await

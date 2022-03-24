@@ -21,6 +21,9 @@ module Duce.Transducer
     transducifyMoore,
     discretise,
     decodeUsingCereal,
+
+    -- *
+    plan,
   )
 where
 
@@ -30,6 +33,7 @@ import qualified Data.Text as Text
 import qualified Deque.Strict as Deque
 import Duce.Core.Reducer
 import Duce.Core.Transducer
+import qualified Duce.Plan as Plan
 import Duce.Prelude hiding (concat, drop, dropWhile, either, find, foldl, head, map, null, par, product, seq, sum, take, takeWhile)
 import qualified Duce.Util.Multimap as Multimap
 import qualified StrictList
@@ -516,3 +520,22 @@ decodeUsingCereal dec =
         EmittingTransducer
           (Left (fromString err))
           (fromResult (CerealGet.runGetPartial dec rem))
+
+-- *
+
+-- |
+-- Compile a plan.
+--
+-- Provides for monadic construction of transducers.
+plan :: Plan.Plan i o () -> Transducer i o
+plan plan = loop
+  where
+    loop =
+      eliminate plan
+    eliminate = \case
+      Plan.TerminatePlan () ->
+        loop
+      Plan.YieldPlan output next ->
+        EmittingTransducer output $ eliminate next
+      Plan.AwaitPlan await ->
+        AwaitingTransducer $ eliminate . await
