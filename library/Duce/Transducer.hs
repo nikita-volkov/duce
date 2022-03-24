@@ -1,5 +1,8 @@
 module Duce.Transducer
   ( Transducer (..),
+    consumeOne,
+    consumeList,
+    eliminateUntilAwaiting,
     emitElements,
     each,
     each3,
@@ -30,6 +33,30 @@ import Duce.Core.Transducer
 import Duce.Prelude hiding (concat, drop, dropWhile, either, find, foldl, head, map, null, par, product, seq, sum, take, takeWhile)
 import qualified Duce.Util.Multimap as Multimap
 import qualified StrictList
+
+consumeOne :: i -> Transducer i o -> Transducer i o
+consumeOne i = \case
+  AwaitingTransducer awaiter -> awaiter i
+  EmittingTransducer o next -> EmittingTransducer o (consumeOne i next)
+
+consumeList :: [i] -> Transducer i o -> Transducer i o
+consumeList inputs = \case
+  AwaitingTransducer awaiter -> case inputs of
+    i : iTail -> consumeList iTail (awaiter i)
+    _ -> AwaitingTransducer awaiter
+  EmittingTransducer o next -> EmittingTransducer o (consumeList inputs next)
+
+-- |
+-- Collect all outputs as reverse-list until an input is requested.
+eliminateUntilAwaiting :: Transducer i o -> ([o], i -> Transducer i o)
+eliminateUntilAwaiting = build []
+  where
+    build oList = \case
+      AwaitingTransducer awaiter -> (oList, awaiter)
+      EmittingTransducer o next -> build (o : oList) next
+
+emitFoldable :: Foldable f => f o -> Transducer i o -> Transducer i o
+emitFoldable = flip (foldr EmittingTransducer)
 
 -- |
 -- Emit all elements from each input.
@@ -433,30 +460,6 @@ sortDiscarding cacheSize getKey =
                     EmittingTransducer a $
                       awaitingOne minimum map
                   else awaitingOne minimum map
-
--- |
--- Collect all outputs as reverse-list until an input is requested.
-eliminateUntilAwaiting :: Transducer i o -> ([o], i -> Transducer i o)
-eliminateUntilAwaiting = build []
-  where
-    build oList = \case
-      AwaitingTransducer awaiter -> (oList, awaiter)
-      EmittingTransducer o next -> build (o : oList) next
-
-consumeOne :: i -> Transducer i o -> Transducer i o
-consumeOne i = \case
-  AwaitingTransducer awaiter -> awaiter i
-  EmittingTransducer o next -> EmittingTransducer o (consumeOne i next)
-
-consumeList :: [i] -> Transducer i o -> Transducer i o
-consumeList inputs = \case
-  AwaitingTransducer awaiter -> case inputs of
-    i : iTail -> consumeList iTail (awaiter i)
-    _ -> AwaitingTransducer awaiter
-  EmittingTransducer o next -> EmittingTransducer o (consumeList inputs next)
-
-emitFoldable :: Foldable f => f o -> Transducer i o -> Transducer i o
-emitFoldable = flip (foldr EmittingTransducer)
 
 -- |
 -- Generalise a Mealy machine as a Transducer.
