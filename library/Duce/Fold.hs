@@ -2,10 +2,10 @@ module Duce.Fold where
 
 import qualified Conduit
 import Control.Foldl (Fold (..))
-import qualified Data.Conduit.Lzma as LzmaConduit
 import qualified Duce.Plan as Plan
 import Duce.Prelude
 import qualified Duce.Transducer as Transducer
+import qualified Duce.Util.Conduit as ConduitUtil
 
 -- *
 
@@ -32,13 +32,11 @@ transduce tx (Fold progress start finish) =
 
 foldFile :: FilePath -> Fold ByteString r -> IO r
 foldFile path fold =
-  Conduit.withSourceFile path $ \source ->
-    Conduit.runConduit $ source Conduit..| toConduit fold
+  ConduitUtil.processFile path $ toConduit fold
 
 foldLzmaFile :: FilePath -> Fold ByteString r -> IO r
 foldLzmaFile path fold =
-  Conduit.withSourceFile path $ \source ->
-    Conduit.runConduit $ source Conduit..| LzmaConduit.decompress Nothing Conduit..| toConduit fold
+  ConduitUtil.processLzmaFile path $ toConduit fold
 
 -- *
 
