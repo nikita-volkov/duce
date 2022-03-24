@@ -52,3 +52,19 @@ yield output =
 compose :: (r1 -> r2 -> r) -> Plan i intermediate r1 -> Plan intermediate o r2 -> Plan i o r
 compose =
   error "TODO"
+
+skip :: Plan i o r
+skip =
+  AwaitPlan $ const skip
+
+mapInput :: (a -> b) -> Plan b o r -> Plan a o r
+mapInput f = \case
+  YieldPlan o plan -> YieldPlan o $ mapInput f plan
+  AwaitPlan await -> AwaitPlan $ mapInput f . await . f
+  TerminatePlan r -> TerminatePlan r
+
+mapOutput :: (a -> b) -> Plan i a r -> Plan i b r
+mapOutput f = \case
+  YieldPlan o plan -> YieldPlan (f o) $ mapOutput f plan
+  AwaitPlan await -> AwaitPlan $ mapOutput f . await
+  TerminatePlan r -> TerminatePlan r

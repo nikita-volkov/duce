@@ -24,6 +24,7 @@ library
     Duce.Mealy
     Duce.Moore
     Duce.Plan
+    Duce.PlanWrappers
     Duce.Reducer
     Duce.Transducer
   other-modules:
