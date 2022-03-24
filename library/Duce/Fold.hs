@@ -28,6 +28,27 @@ transduce tx (Fold progress start finish) =
       Transducer.AwaitingTransducer await ->
         (await, state)
 
+preplan :: Plan.Plan i o () -> Fold o r -> Fold i r
+preplan plan (Fold progress start finish) =
+  Fold progress' start' finish'
+  where
+    start' =
+      eliminate start plan
+
+    progress' (await, state) input =
+      eliminate state $ await input
+
+    finish' (_, state) =
+      finish state
+
+    eliminate state = \case
+      Plan.YieldPlan output plan ->
+        eliminate (progress state output) plan
+      Plan.AwaitPlan await ->
+        (await, state)
+      Plan.TerminatePlan () ->
+        eliminate state plan
+
 -- *
 
 foldFile :: FilePath -> Fold ByteString r -> IO r
