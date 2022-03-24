@@ -2,6 +2,7 @@ module Duce.Plan where
 
 import qualified Conduit
 import Duce.Prelude
+import qualified Duce.Util.Conduit as ConduitUtil
 
 -- *
 
@@ -80,3 +81,13 @@ toConduit = \case
       Just i -> toConduit $ await i
       Nothing -> pure Nothing
   TerminatePlan r -> pure $ Just r
+
+-- *
+
+processFile :: FilePath -> Plan ByteString Void r -> IO (Maybe r)
+processFile path process =
+  ConduitUtil.processFile path $ toConduit process
+
+processLzmaFile :: FilePath -> Plan ByteString Void r -> IO (Maybe r)
+processLzmaFile path process =
+  ConduitUtil.processLzmaFile path $ toConduit process
