@@ -21,6 +21,7 @@ library
   default-language: Haskell2010
   exposed-modules:
     Duce.Mealy
+    Duce.Moore
     Duce.Plan
     Duce.Reducer
     Duce.Transducer
